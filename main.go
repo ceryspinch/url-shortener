@@ -3,13 +3,18 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
+	"strings"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
 var shortenedURLs = make(map[string]string)
+
+const (
+	alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+)
 
 type Error struct {
 	Message string `json:"message"`
@@ -36,6 +41,17 @@ func main() {
 	}
 }
 
+func Base62Encode(number uint64) string {
+	length := len(alphabet)
+	var encodedBuilder strings.Builder
+	encodedBuilder.Grow(10)
+	for ; number > 0; number = number / uint64(length) {
+		encodedBuilder.WriteByte(alphabet[(number % uint64(length))])
+	}
+
+	return encodedBuilder.String()
+}
+
 func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the URL to be shortened from the request
 	originalURL := r.URL.Query().Get("url")
@@ -52,23 +68,26 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 
 func RedirectURLHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the shortened URL from the request
-	shortURL := r.URL.Query().Get("shorturl")
+	shortURL := r.URL.Query().Get("url")
 	if shortURL == "" {
-		writeError(w, "shortened url not provided", http.StatusBadRequest)
+		writeError(w, "url not provided", http.StatusBadRequest)
 		return
 	}
 	// Find original URL in the map
 	originalURL := shortenedURLs[shortURL]
-	fmt.Print(originalURL)
 
 	// Redirect request to original/long URL
 	http.Redirect(w, r, originalURL, http.StatusSeeOther)
 }
 
 func shortenURL(urlToShorten string) string {
-	// TODO: Find way to shorten URL instead of this
-	shortURL := uuid.New().String()
+	// get base62 encoded version of a random number
+	encodedURL := Base62Encode(rand.Uint64())
+	// Add this encoding to a correctly formatted URL path
+	shortURL := fmt.Sprintf("http://%s.com", encodedURL)
+	// Set new short URL as key in map, and original URL as value
 	shortenedURLs[shortURL] = urlToShorten
+
 	return shortURL
 }
 
