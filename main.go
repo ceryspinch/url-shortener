@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
-	"strings"
+	"os"
+
+	"url-shortener/utils"
 
 	"github.com/gorilla/mux"
 )
 
-var shortenedURLs = make(map[string]string)
-
-const (
-	alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+var (
+	shortenedURLs = make(map[string]string)
+	jsonDBFile    = "database/in_mem_database.json"
 )
 
 type Error struct {
@@ -25,8 +26,8 @@ func main() {
 	router := mux.NewRouter()
 	// Endpoint to return shortened URL
 	router.HandleFunc("/shorten", ShortenURLHandler)
-	// Endppoint to redirect shortened URL to original URL
-	router.HandleFunc("/redirect", RedirectURLHandler)
+	// Endpoint to redirect shortened URL to original URL
+	router.HandleFunc("/", RedirectURLHandler)
 
 	port := 8080
 	server := &http.Server{
@@ -34,36 +35,37 @@ func main() {
 		Handler: router,
 	}
 
-	// Broadcast the HTTP server on port 8080 of localhost, with an handler on the path "/".
+	// Broadcast the HTTP server on port 8080 of localhost.
 	err := server.ListenAndServe()
 	if err != nil {
 		return
 	}
 }
 
-func Base62Encode(number uint64) string {
-	length := len(alphabet)
-	var encodedBuilder strings.Builder
-	encodedBuilder.Grow(10)
-	for ; number > 0; number = number / uint64(length) {
-		encodedBuilder.WriteByte(alphabet[(number % uint64(length))])
-	}
-
-	return encodedBuilder.String()
-}
-
 func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
-	// Get the URL to be shortened from the request
+	// Get the long URL from the request
 	originalURL := r.URL.Query().Get("url")
 	if originalURL == "" {
 		writeError(w, "url not provided", http.StatusBadRequest)
 		return
 	}
 
-	shortenedURL := shortenURL(originalURL)
+	// Generate short URL
+	shortURL := fmt.Sprintf("http://%s.com/", utils.Base62Encode(rand.Uint64()))
+
+	// Store short URL in map with original URL as value
+	shortenedURLs[shortURL] = originalURL
+
+	// Update database
+	updatedDatabase, err := json.MarshalIndent(shortenedURLs, "", "    ")
+	if err != nil {
+		writeError(w, "error marshalling data into db", http.StatusBadRequest)
+		return
+	}
+	os.WriteFile(jsonDBFile, updatedDatabase, 0644)
 
 	// Print newly shortened URL
-	fmt.Fprintf(w, shortenedURL)
+	fmt.Fprintf(w, shortURL)
 }
 
 func RedirectURLHandler(w http.ResponseWriter, r *http.Request) {
@@ -73,22 +75,16 @@ func RedirectURLHandler(w http.ResponseWriter, r *http.Request) {
 		writeError(w, "url not provided", http.StatusBadRequest)
 		return
 	}
-	// Find original URL in the map
-	originalURL := shortenedURLs[shortURL]
+
+	// Find original URL in the map if it exists
+	originalURL, ok := shortenedURLs[shortURL]
+	if !ok {
+		writeError(w, "invalid short url provided", http.StatusBadRequest)
+		return
+	}
 
 	// Redirect request to original/long URL
 	http.Redirect(w, r, originalURL, http.StatusSeeOther)
-}
-
-func shortenURL(urlToShorten string) string {
-	// get base62 encoded version of a random number
-	encodedURL := Base62Encode(rand.Uint64())
-	// Add this encoding to a correctly formatted URL path
-	shortURL := fmt.Sprintf("http://%s.com", encodedURL)
-	// Set new short URL as key in map, and original URL as value
-	shortenedURLs[shortURL] = urlToShorten
-
-	return shortURL
 }
 
 // writeError is a simple utility function for error responses, used to keep the handler code
