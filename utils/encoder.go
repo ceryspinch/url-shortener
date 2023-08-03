@@ -1,18 +1,33 @@
 package utils
 
-import "strings"
-
-const (
-	alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+import (
+	"math"
+	"strings"
 )
 
-func Base62Encode(number uint64) string {
-	length := len(alphabet)
-	var encodedBuilder strings.Builder
-	encodedBuilder.Grow(10)
-	for ; number > 0; number = number / uint64(length) {
-		encodedBuilder.WriteByte(alphabet[(number % uint64(length))])
-	}
+const base = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const b = 62
 
-	return encodedBuilder.String()
+// Function encodes the given database ID to a base62 string
+func ToBase62(num int) string {
+	r := num % b
+	res := string(base[r])
+	div := num / b
+	q := int(math.Floor(float64(div)))
+	for q != 0 {
+		r = q % b
+		temp := q / b
+		q = int(math.Floor(float64(temp)))
+		res = string(base[int(r)]) + res
+	}
+	return string(res)
+}
+
+// Function decodes a given base62 string to database ID
+func ToBase10(str string) int {
+	res := 0
+	for _, r := range str {
+		res = (b * res) + strings.Index(base, string(r))
+	}
+	return res
 }

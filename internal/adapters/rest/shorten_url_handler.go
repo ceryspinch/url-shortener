@@ -1,41 +1,34 @@
 package rest
 
-import (
-	"encoding/json"
-	"fmt"
-	"math/rand"
-	"net/http"
-	"os"
-	"url-shortener/utils"
-)
+// import (
+// 	"fmt"
+// 	"net/http"
+// 	"url-shortener/utils"
+// )
 
-var (
-	shortenedURLs = make(map[string]string)
-	jsonDBFile    = "../build/database/in_mem_database.json"
-)
+// var (
+// 	shortenedURLs = make(map[string]string)
+// )
 
-func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
-	// Get the long URL from the request
-	originalURL := r.URL.Query().Get("url")
-	if originalURL == "" {
-		WriteError(w, "url not provided", http.StatusBadRequest)
-		return
-	}
+// func (driver *main.DBClient) ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
+// 	// Get the long URL from the request
+// 	originalURL := r.URL.Query().Get("url")
+// 	if originalURL == "" {
+// 		WriteError(w, "url not provided", http.StatusBadRequest)
+// 		return
+// 	}
 
-	// Generate short URL
-	shortURL := fmt.Sprintf("http://%s.com/", utils.Base62Encode(rand.Uint64()))
+// 	var id int
+// 	err := driver.db.QueryRow("INSERT INTO web_url(url) VALUES($1) RETURNING id", originalURL).Scan(&id)
+// 	fmt.Println(id)
 
-	// Store short URL in map with original URL as value
-	shortenedURLs[shortURL] = originalURL
+// 	if err != nil {
+// 		fmt.Print("oh no")
+// 	}
 
-	// Update database
-	updatedDatabase, err := json.MarshalIndent(shortenedURLs, "", "    ")
-	if err != nil {
-		WriteError(w, "error marshalling data into db", http.StatusBadRequest)
-		return
-	}
-	os.WriteFile(jsonDBFile, updatedDatabase, 0644)
+// 	// Generate short URL
+// 	shortURL := fmt.Sprintf(utils.ToBase62(id))
 
-	// Print newly shortened URL
-	fmt.Fprintf(w, shortURL)
-}
+// 	// Print newly shortened URL
+// 	fmt.Fprintf(w, shortURL)
+// }
