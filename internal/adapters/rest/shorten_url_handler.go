@@ -1,34 +1,34 @@
 package rest
 
-// import (
-// 	"fmt"
-// 	"net/http"
-// 	"url-shortener/utils"
-// )
+import (
+	"database/sql"
+	"fmt"
+	"net/http"
+)
 
-// var (
-// 	shortenedURLs = make(map[string]string)
-// )
+type ShortenURLHandler struct {
+	Database *sql.DB
+}
 
-// func (driver *main.DBClient) ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
-// 	// Get the long URL from the request
-// 	originalURL := r.URL.Query().Get("url")
-// 	if originalURL == "" {
-// 		WriteError(w, "url not provided", http.StatusBadRequest)
-// 		return
-// 	}
+func (handler *ShortenURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Get the long URL from the request
+	originalURL := r.URL.Query().Get("url")
+	if originalURL == "" {
+		WriteError(w, "url not provided", http.StatusBadRequest)
+		return
+	}
 
-// 	var id int
-// 	err := driver.db.QueryRow("INSERT INTO web_url(url) VALUES($1) RETURNING id", originalURL).Scan(&id)
-// 	fmt.Println(id)
+	// Add the URL to the database and return the unique ID of that record
+	var id int
+	err := handler.Database.QueryRow("INSERT INTO url_shortener(url) VALUES($1) RETURNING id", originalURL).Scan(&id)
+	if err != nil {
+		WriteError(w, "could not create new database record", http.StatusInternalServerError)
+		return
+	}
 
-// 	if err != nil {
-// 		fmt.Print("oh no")
-// 	}
+	// Generate short URL
+	shortURL := fmt.Sprintf("http://%s.com/", ToBase62(id))
 
-// 	// Generate short URL
-// 	shortURL := fmt.Sprintf(utils.ToBase62(id))
-
-// 	// Print newly shortened URL
-// 	fmt.Fprintf(w, shortURL)
-// }
+	// Print newly shortened URL
+	w.Write([]byte(shortURL))
+}

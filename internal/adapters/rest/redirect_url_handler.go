@@ -1,22 +1,36 @@
 package rest
 
-// import "net/http"
+import (
+	"database/sql"
+	"net/http"
+)
 
-// func RedirectURLHandler(w http.ResponseWriter, r *http.Request) {
-// 	// Get the shortened URL from the request
-// 	shortURL := r.URL.Query().Get("url")
-// 	if shortURL == "" {
-// 		WriteError(w, "url not provided", http.StatusBadRequest)
-// 		return
-// 	}
+type RedirectURLHandler struct {
+	Database *sql.DB
+}
 
-// 	// Find original URL in the map if it exists
-// 	originalURL, ok := shortenedURLs[shortURL]
-// 	if !ok {
-// 		WriteError(w, "invalid short url provided", http.StatusBadRequest)
-// 		return
-// 	}
+func (handler *RedirectURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Get the shortened URL from the request
+	shortURL := r.URL.Query().Get("url")
+	if shortURL == "" {
+		WriteError(w, "url not provided", http.StatusBadRequest)
+		return
+	}
 
-// 	// Redirect request to original/long URL
-// 	http.Redirect(w, r, originalURL, http.StatusSeeOther)
-// }
+	// Get the encoded string substring from the short URL
+	stringToDecode := shortURL[7 : len(shortURL)-5]
+
+	// Convert the encoded string to the a database ID
+	id := ToBase10(stringToDecode)
+
+	// Get the original URL from the database
+	var originalURL string
+	err := handler.Database.QueryRow("SELECT url FROM url_shortener WHERE id = $1", id).Scan(&originalURL)
+	if err != nil {
+		WriteError(w, "could not retrieve original URL from database", http.StatusInternalServerError)
+		return
+	}
+
+	// Redirect user to the original long URL
+	http.Redirect(w, r, originalURL, http.StatusSeeOther)
+}
