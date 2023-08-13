@@ -4,7 +4,8 @@ A URL shortner microservice
 
 ## How to use
 
-Ensure
+- Ensure you have PostgreSQL set up on your local machine.
+- Replace the values of dbUser, dbName and dbPassword in models/db.go to match your PostgreSQL configuration credentials.
 
 ## To run main REST component
 

@@ -25,7 +25,6 @@ func (handler *RedirectURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		WriteError(w, "could not retrieve original URL from database", http.StatusInternalServerError)
 		return
 	}
-
-	// Redirect user to the original long URL
+	
 	http.Redirect(w, r, originalURL, http.StatusSeeOther)
 }

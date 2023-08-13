@@ -30,8 +30,6 @@ func main() {
 	// Endpoint to redirect shortened URL to original URL
 	router.HandleFunc("/{shortURL}", redirectURLHandler.ServeHTTP)
 
-	http.Handle("/", router)
-
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", 8080),
 		Handler: router,

@@ -26,9 +26,7 @@ func (handler *ShortenURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Generate short URL
 	shortURL := fmt.Sprintf("http://localhost:8080/%s", ToBase62(id))
 
-	// Print newly shortened URL
 	w.Write([]byte(shortURL))
 }
