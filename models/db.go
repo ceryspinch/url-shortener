@@ -8,6 +8,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// Replace these values to match local PostreSQL config.
 const (
 	dbUser     = "postgres"
 	dbPassword = "temp"
@@ -22,7 +23,6 @@ func InitDB() (*sql.DB, error) {
 		return nil, err
 	}
 
-	// Create database if not exists, to store URLs
 	createStatement, err := db.Prepare("CREATE TABLE IF NOT EXISTS urls(ID SERIAL PRIMARY KEY, URL TEXT NOT NULL);")
 	if err != nil {
 		log.Println(err)
