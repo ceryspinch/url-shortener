@@ -20,14 +20,14 @@ func (handler *ShortenURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 
 	// Add the URL to the database and return the unique ID of that record
 	var id int
-	err := handler.Database.QueryRow("INSERT INTO url_shortener(url) VALUES($1) RETURNING id", originalURL).Scan(&id)
+	err := handler.Database.QueryRow("INSERT INTO urls(url) VALUES($1) RETURNING id", originalURL).Scan(&id)
 	if err != nil {
 		WriteError(w, "could not create new database record", http.StatusInternalServerError)
 		return
 	}
 
 	// Generate short URL
-	shortURL := fmt.Sprintf("http://%s.com/", ToBase62(id))
+	shortURL := fmt.Sprintf("http://localhost:8080/%s", ToBase62(id))
 
 	// Print newly shortened URL
 	w.Write([]byte(shortURL))

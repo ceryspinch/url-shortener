@@ -2,7 +2,9 @@
 
 A URL shortner microservice
 
-# How to use
+## How to use
+
+Ensure
 
 ## To run main REST component
 
@@ -14,7 +16,9 @@ go run cmd/main.go
 
 After running main REST component (see above)
 
-Visit following URL in browser of choice:
+Open a web browser and navigate to following url:
+
+- Remember to replace <url_to_be_shortened> with your URL of choice
 
 ```
 http://localhost:8080/shorten?url=<url_to_be_shortened>
@@ -22,10 +26,4 @@ http://localhost:8080/shorten?url=<url_to_be_shortened>
 
 ## To use new shortened URL
 
-Visit following URL in browser of choice:
-
-\*Replace shortened_url with the URL printed to the browser after running the above command
-
-```
-http://localhost:8080/redirect?url=<shortened_url>
-```
+Open a web browser and navigate to shortened URL received from previous step

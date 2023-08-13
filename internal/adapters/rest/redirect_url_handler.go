@@ -3,6 +3,8 @@ package rest
 import (
 	"database/sql"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 type RedirectURLHandler struct {
@@ -10,22 +12,15 @@ type RedirectURLHandler struct {
 }
 
 func (handler *RedirectURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Get the shortened URL from the request
-	shortURL := r.URL.Query().Get("url")
-	if shortURL == "" {
-		WriteError(w, "url not provided", http.StatusBadRequest)
-		return
-	}
+	// Get the short URL from the request
+	shortURL := mux.Vars(r)["shortURL"]
 
-	// Get the encoded string substring from the short URL
-	stringToDecode := shortURL[7 : len(shortURL)-5]
-
-	// Convert the encoded string to the a database ID
-	id := ToBase10(stringToDecode)
+	// Convert the short URL to the a database ID
+	id := ToBase10(shortURL)
 
 	// Get the original URL from the database
 	var originalURL string
-	err := handler.Database.QueryRow("SELECT url FROM url_shortener WHERE id = $1", id).Scan(&originalURL)
+	err := handler.Database.QueryRow("SELECT url FROM urls WHERE id = $1", id).Scan(&originalURL)
 	if err != nil {
 		WriteError(w, "could not retrieve original URL from database", http.StatusInternalServerError)
 		return

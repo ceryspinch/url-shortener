@@ -2,25 +2,25 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"url-shortener/internal/adapters/rest"
 	"url-shortener/models"
+
+	_ "github.com/lib/pq"
 
 	"github.com/gorilla/mux"
 )
 
 func main() {
-	// Initialise database
 	db, err := models.InitDB()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer db.Close()
 
-	// Create router
 	router := mux.NewRouter()
 
-	// Create handlers
 	shortenURLHandler := rest.ShortenURLHandler{Database: db}
 	redirectURLHandler := rest.RedirectURLHandler{Database: db}
 
@@ -28,7 +28,9 @@ func main() {
 	router.HandleFunc("/shorten", shortenURLHandler.ServeHTTP)
 
 	// Endpoint to redirect shortened URL to original URL
-	router.HandleFunc("/redirect", redirectURLHandler.ServeHTTP)
+	router.HandleFunc("/{shortURL}", redirectURLHandler.ServeHTTP)
+
+	http.Handle("/", router)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", 8080),
